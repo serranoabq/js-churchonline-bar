@@ -1,4 +1,4 @@
-Livestream Notification Bar (Plugin)
+ChurcOnline Notification Bar (Plugin)
 ==========================
 
 A WordPress plugin to display a notification on the header of the site when there is [ChurchOnline.org](http://curchonline.org) event scheduled or live on a specific account 

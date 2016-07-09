@@ -57,14 +57,15 @@
 			
 			if( is_live ) return;
 			
-			//jscob_data.start_time = data.response.item.eventStartTime;
+			jscob_data.start_time = data.response.item.eventStartTime;
 			
-			var d = new Date();
-			var d2 = new Date( d );
-			d2.setMinutes( d.getMinutes() + 2 );
-			jscob_data.start_time = d2;
-
-			jscob_data.bar = jscob_bar;
+			if( jscob_data.debug ){
+				var d = new Date();
+				var d2 = new Date( d );
+				d2.setMinutes( d.getMinutes() + 2 );
+				jscob_data.start_time = d2;
+			}
+			
 			var jscob_clock = jscob_bar.find( '#jscob_clock' );
 			if( ! jscob_clock ) { jscob_clock = $( '<span id="jscob_clock"></span>' ); }
 			initializeClock( 
@@ -73,7 +74,7 @@
 				jscob_data.delay, 
 				function(){ 
 					jscob_bar.html( jscob_data.live_text );
-					jscob_bar.removeClass( 'jscob-hiddenbar' );
+					jscob_bar.removeClass( 'jscob-hiddenbar upcoming' ).addClass( 'live' );
 			} );
 		}
 		

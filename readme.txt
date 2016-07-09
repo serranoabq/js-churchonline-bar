@@ -1,6 +1,6 @@
-=== Livestream Notification Bar ===
+=== ChurcOnline Notification Bar ===
 Contributors: serranoabq
-Tags: livestream, header bar, notification bar 
+Tags: churchonline, header bar, notification bar 
 Requires at least: 4.4
 Tested up to: 4.4
 Stable tag: trunk

@@ -9,7 +9,7 @@
 class JS_ChurchOnlineBar {
 	
 	private $account_name;
-	private $debug_enabled = false;
+	private $debug_enabled = true;
 	
 	function __construct(){
 		// Use Custommizer to set settings
@@ -143,6 +143,8 @@ class JS_ChurchOnlineBar {
 	}
 	
 	function add_scripts(){
+		
+		$this->debug_enabled = $this->debug_enabled || is_user_logged_in();
 		
 		$location = get_theme_mod( 'churchonline_location' );
 		if( 'front' == $location && ! is_front_page() ) return;
