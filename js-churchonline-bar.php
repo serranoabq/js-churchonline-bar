@@ -9,7 +9,7 @@
 class JS_ChurchOnlineBar {
 	
 	private $account_name;
-	private $debug_enabled = true;
+	private $debug_enabled = false;
 	
 	function __construct(){
 		// Use Custommizer to set settings
