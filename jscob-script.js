@@ -62,7 +62,7 @@
 			if( jscob_data.debug ){
 				var d = new Date();
 				var d2 = new Date( d );
-				d2.setMinutes( d.getMinutes() + 2 );
+				d2.setSeconds( d.getSeconds() + 30 );
 				jscob_data.start_time = d2;
 			}
 			
