@@ -144,7 +144,7 @@ class JS_ChurchOnlineBar {
 	
 	function add_scripts(){
 		
-		$this->debug_enabled = $this->debug_enabled || is_user_logged_in();
+		$this->debug_enabled = $this->debug_enabled || is_customize_preview();
 		
 		$location = get_theme_mod( 'churchonline_location' );
 		if( 'front' == $location && ! is_front_page() ) return;
