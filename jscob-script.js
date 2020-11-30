@@ -1,134 +1,121 @@
 /* 	
 	Countdown clock for js-churchonline-bar
 */
+
+const CURRENT_SERVICE_QUERY = `
+query CurrentService {
+  currentService(onEmpty: LOAD_NEXT) {
+    id
+    startTime
+    endTime
+    content {
+      title
+    }
+  }
+}
+`;
+
 (function($) {
 	$(document).ready( function() {
 		
 		var account = jscob_data.account;
 		if( ! account ) return;
 		
-		var churchUrl = 'http://' + account + '.churchonline.org';
-		var eventUrl = eventUrl = churchUrl + '/api/v1/events/current';
+		var churchUrl = 'http://' + account + '.online.church/graphql';
+		
 		// Create the notification bar
-		var jscob_bar = $('<div id="jscob_bar"></div>' );
-		
-		fetchData();
-		
-		function fetchData(){
-			msie = /msie/.test(navigator.userAgent.toLowerCase())
-			if (msie && window.XDomainRequest) {
-					var xdr = new XDomainRequest();
-					xdr.open("get", eventUrl);
-					xdr.onload = function() {
-						loadCountdown($.parseJSON(xdr.responseText))
-					};
-					xdr.send();
-			} else {
-				$.ajax({
-					url: eventUrl,
-					dataType: "json",
-					crossDomain: true,
-					success: function(data) {
-						loadCountdown(data);
-					},
-					error: function(xhr, ajaxOptions, thrownError) {
-						return console.log(thrownError);
-					}
-				});
+		var jscob_bar = $( '<div id="jscob_bar"></div>' );
+		var jscob_clock = jscob_bar.find( '#jscob_clock' );
+		if( ! jscob_clock ) { jscob_clock = $( '<span id="jscob_clock"></span>' ); }
+			
+		async function startCountdown() {
+			// Fetch the current or next service data
+			const service = await fetch( "https://" + account + ".online.church/graphql", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json"
+				},
+				body: JSON.stringify( {
+					query: CURRENT_SERVICE_QUERY,
+					operationName: "CurrentService"
+				} )
+			} )
+			.then( ( response ) => response.json() )
+			.catch( ( error ) => console.error( error ) );
+
+			// If no service was returned from the API, don't display the countdown
+			if( ! service.data.currentService || ! service.data.currentService.id ) {
+				return;
 			}
-		}
-		
-		function loadCountdown( data ){
-			
-			var is_live = data.response.item.isLive;
-			
-			jscob_bar.html( is_live ? jscob_data.live_text : jscob_data.upcoming_text );
-			
-			jscob_bar.addClass( is_live ? 'live' : 'upcoming' );
-			
-			// If upcoming message will not be displayed, just hide the bar
-			if( ! jscob_data.show_upc ){ 
-				jscob_bar.addClass( 'jsls-hiddenbar' );
-			}
-			
-			var jscob = $( jscob_data.parent ).prepend( jscob_bar ); 
+
+			// Set the date we're counting down to
+			const startTime = new Date( service.data.currentService.startTime ).getTime();
+			const endTime = new Date( service.data.currentService.endTime ).getTime();
 			
 			jscob_data.bar = jscob_bar;
+			jscob_data.start_time = startTime;
 			
-			if( is_live ) return;
-			
-			jscob_data.start_time = data.response.item.eventStartTime;
-			
-			if( jscob_data.debug ){
-				var d = new Date();
-				var d2 = new Date( d );
-				d2.setSeconds( d.getSeconds() + 30 );
-				jscob_data.start_time = d2;
-			}
-			
-			var jscob_clock = jscob_bar.find( '#jscob_clock' );
-			if( ! jscob_clock ) { jscob_clock = $( '<span id="jscob_clock"></span>' ); }
-			initializeClock( 
-				jscob_clock, 
-				jscob_data.start_time, 
-				jscob_data.delay, 
-				function(){ 
+			// Create a one second interval to tick down to the startTime
+			const intervalId = setInterval( function () {
+				var is_live = false;
+				const now = new Date().getTime();
+
+				// If we are between the start and end time, the service is live
+				if( now >= startTime && now <= endTime ) {
+					clearInterval( intervalId );
+					is_live = true;
 					jscob_bar.html( jscob_data.live_text );
 					jscob_bar.removeClass( 'jscob-hiddenbar upcoming' ).addClass( 'live' );
-			} );
+					return;
+				} else {
+					jscob_bar.html( jscob_data.upcoming_text );
+					jscob_bar.addClass( 'upcoming' );
+				}
+
+				// Find the difference between now and the start time
+				const difference = startTime - now;
+
+				// Time calculations for days, hours, minutes and seconds
+				const days = Math.floor( difference / ( 1000 * 60 * 60 * 24 ) );
+				const hours = Math.floor(
+					( difference % (1000 * 60 * 60 * 24) ) / ( 1000 * 60 * 60 )
+				);
+				const minutes = Math.floor( ( difference % ( 1000 * 60 * 60 ) ) / ( 1000 * 60 ) );
+				const seconds = Math.floor( ( difference % ( 1000 * 60) ) / 1000 );
+				
+				var sclock = "";
+				if( days > 0 ) { sclock = '<span class="days">' + days + 'd</span> '; }
+				if( hours > 0 && t.total > 3600 ) { sclock = sclock + '<span class="hours">' + hours + 'h</span> '; }
+				if( minutes > 0 && t.total > 60 ) { sclock = sclock + '<span class="minutes">' + ('0' + minutes).slice(-2) + 'm</span> '; }
+				if( seconds > 0 )  { sclock = sclock + '<span class="seconds">' + ('0' + seconds).slice(-2) + 's</span> '; }
+				
+				if( difference > 0 ){
+					if( difference > delay * 60000 ) {
+						if( ! jscob_data.bar.hasClass( 'jscob-hiddenbar' ) ) 
+							jscob_data.bar.addClass( 'jscob-hiddenbar' );
+					} else {
+						jscob_data.bar.removeClass( 'jscob-hiddenbar' );
+					}
+				}
+				
+				// Display the results 
+				jscob_clock.html( sclock );
+
+				// If we are past the end time, clear the countdown
+				if( difference < 0 ) {
+					clearInterval( intervalId );
+					jscob_clock.html = "";
+					//document.getElementById("countdown").innerHTML = "";
+					return;
+				}
+			}, 1000);
 		}
 		
-	} );
+		startCountdown();
 	
-	function getTimeRemaining( endtime ){
-		var t = Date.parse( endtime ) - Date.parse( new Date() );
-		var seconds = Math.floor( (t / 1000) % 60 );
-		var minutes = Math.floor( (t / 1000 / 60) % 60 );
-		var hours = Math.floor( (t / (1000 * 60 * 60)) % 24 );
-		var days = Math.floor( t / (1000 * 60 * 60 * 24) );
-		return {
-			'total': t,
-			'days': days,
-			'hours': hours,
-			'minutes': minutes,
-			'seconds': seconds
-		};
-	}
-
-	function initializeClock( element, endtime,delay, fn ) {
-		var clock = $( element );
-		if( delay === undefined ) delay = -1;
+	} );
 		
-		function updateClock() {
-			var t = getTimeRemaining( endtime );
-			var sclock = "";
-			if( t.days > 0 ) { sclock = '<span class="days">' + t.days + 'd</span> '; }
-			if( t.hours > 0 && t.total > 3600 ) { sclock = sclock + '<span class="hours">' + t.hours + 'h</span> '; }
-			if( t.minutes > 0 && t.total > 60 ) { sclock = sclock + '<span class="minutes">' + ('0' + t.minutes).slice(-2) + 'm</span> '; }
-			if( t.total > 0 )  { sclock = sclock + '<span class="seconds">' + ('0' + t.seconds).slice(-2) + 's</span> '; }
-
-			if( delay > 0 ){
-				if( t.total > delay * 60000 ) {
-					if( ! jscob_data.bar.hasClass( 'jscob-hiddenbar' ) ) 
-						jscob_data.bar.addClass( 'jscob-hiddenbar' );
-				} else {
-					jscob_data.bar.removeClass( 'jscob-hiddenbar' );
-				}
-			}
-			
-			clock.html( sclock );
-			
-			if( t.total <= 0 ) {
-				fn();
-				clearInterval( timeinterval );
-			}
-			
-		} 
-
-		updateClock();
-		var timeinterval = setInterval( updateClock, 1000 );
-	}
-
 	function debug( msg ){
 		if( jscob_data.debug && console.log ){
 			console.log( msg );
