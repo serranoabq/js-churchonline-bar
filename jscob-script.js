@@ -15,20 +15,45 @@ query CurrentService {
 }
 `;
 
-(function($) {
+( function($) {
 	$(document).ready( function() {
-		
+		var jscob_bar, jscob_clock;
 		var account = jscob_data.account;
 		if( ! account ) return;
 		
-		var churchUrl = 'http://' + account + '.online.church/graphql';
+		var churchUrl = 'https://' + account + '.online.church/graphql';
 		
-		// Create the notification bar
-		var jscob_bar = $( '<div id="jscob_bar"></div>' );
-		var jscob_clock = jscob_bar.find( '#jscob_clock' );
-		if( ! jscob_clock ) { jscob_clock = $( '<span id="jscob_clock"></span>' ); }
+		// get time until event start
+		//	returns: { string with countdown, remiaining time in ms }
+		function getRemainingTime( start_time ){
+			var now = new Date().getTime();
+			var t = start_time - now;
+
+			// Time calculations for days, hours, minutes and seconds
+			var days = Math.floor( t / ( 1000 * 60 * 60 * 24 ) ) ;
+			var hours = Math.floor(
+				( t % (1000 * 60 * 60 * 24) ) / ( 1000 * 60 * 60 )
+			);
+			var minutes = Math.floor( ( t % ( 1000 * 60 * 60 ) ) / ( 1000 * 60 ) );
+			var seconds = Math.floor( ( t % ( 1000 * 60) ) / 1000 );
 			
-		async function startCountdown() {
+			// Format clock
+			var sclock = "";
+			if( days > 0 ) 
+				sclock = '<span class="digits days">' + days + ( jscob_data.show_units ? '<span class="jscob_units">d</span>' : '' ) + '</span> '; 
+			if( hours > 0 ) 
+				sclock = sclock + '<span class="digits hours">' + hours + ( jscob_data.show_units ? '<span class="jscob_units">h</span>' : '' )  + '</span> ';
+			if( minutes > 0 ) 
+				sclock = sclock + '<span class="digits minutes">' + ('0' + minutes).slice(-2) + ( jscob_data.show_units ? '<span class="jscob_units">m</span>' : '' ) + '</span> '; 
+			if( seconds >= 0 && days == 0 && hours < 1 )  
+				sclock = sclock + '<span class="digits seconds">' + ('0' + seconds).slice(-2) + ( jscob_data.show_units ? '<span class="jscob_units">s</span>' : '' ) + '</span> '; 
+			
+			return { "clock" : sclock, "time_remaining": t };
+		}
+		
+		/**/ 
+		async function fetchData(){
+			
 			// Fetch the current or next service data
 			const service = await fetch( "https://" + account + ".online.church/graphql", {
 				method: "POST",
@@ -48,50 +73,75 @@ query CurrentService {
 			if( ! service.data.currentService || ! service.data.currentService.id ) {
 				return;
 			}
-
-			// Set the date we're counting down to
-			const startTime = new Date( service.data.currentService.startTime ).getTime();
-			const endTime = new Date( service.data.currentService.endTime ).getTime();
 			
+			// We're good to go; make the bar
+			createBar( service.data );
+			
+		} // fetchData
+		
+		function createBar( data ){
+			// Create the bar
+			
+			// Figure out the time
+			var now = new Date().getTime();
+			if( jscob_data.debug ){
+				// some dummy time for debugging
+				var d = new Date();
+				var d2 = new Date( d );
+				d2.setSeconds( d.getSeconds() + 90 );
+				d.setSeconds( d.getSeconds() + 120 );
+				var startTime = d2.getTime();
+				var endTime = d.getTime();
+			} else {
+				var startTime = new Date( data.currentService.startTime ).getTime();
+				var endTime = new Date( data.currentService.endTime ).getTime();
+			}
+			var is_live = ( now >= startTime && now <= endTime );
+			
+			// Set up the bar text		
+			jscob_data.upcoming_text = jscob_data.upcoming_text.replace( "{{CLOCK}}", '<span id="jscob_clock"></span>' );
+			if( jscob_data.upcoming_text.indexOf('<span id="jscob_clock"' ) == -1 ){
+				jscob_data.upcoming_text + ' <span id="jscob_clock"></span>';
+			}
+			
+			jscob_bar = $( '<div id="jscob_bar"></div>' );
+			jscob_bar.html( is_live ? jscob_data.live_text : jscob_data.upcoming_text );
+			
+			// add classes
+			jscob_bar.addClass( is_live ? 'live' : 'upcoming' );
+			if( ! jscob_data.show_upc ){ 
+				jscob_bar.addClass( 'jsls-hiddenbar' );
+			}
+			
+			// Add bar to DOM
+			$( jscob_data.parent ).prepend( jscob_bar ); 
 			jscob_data.bar = jscob_bar;
+			jscob_data.live = is_live;
+			
+			// if the event is live, no need for a clock
+			if( is_live ) return;
+			
 			jscob_data.start_time = startTime;
 			
-			// Create a one second interval to tick down to the startTime
-			const intervalId = setInterval( function () {
-				var is_live = false;
-				const now = new Date().getTime();
-
-				// If we are between the start and end time, the service is live
-				if( now >= startTime && now <= endTime ) {
-					clearInterval( intervalId );
-					is_live = true;
-					jscob_bar.html( jscob_data.live_text );
-					jscob_bar.removeClass( 'jscob-hiddenbar upcoming' ).addClass( 'live' );
-					return;
-				} else {
-					jscob_bar.html( jscob_data.upcoming_text );
-					jscob_bar.addClass( 'upcoming' );
-				}
-
-				// Find the difference between now and the start time
-				const difference = startTime - now;
-
-				// Time calculations for days, hours, minutes and seconds
-				const days = Math.floor( difference / ( 1000 * 60 * 60 * 24 ) );
-				const hours = Math.floor(
-					( difference % (1000 * 60 * 60 * 24) ) / ( 1000 * 60 * 60 )
-				);
-				const minutes = Math.floor( ( difference % ( 1000 * 60 * 60 ) ) / ( 1000 * 60 ) );
-				const seconds = Math.floor( ( difference % ( 1000 * 60) ) / 1000 );
+			// Start the clock
+			intializeClock();
+			
+		}
+		
+		function intializeClock(){
+			// Start the clock
+			
+			var jscob_clock = jscob_data.bar.find("#jscob_clock");
+			if( ! jscob_data.delay ) jscob_data.delay = -1;
+			
+			function updateClock(){
+				// Update the clock
 				
-				var sclock = "";
-				if( days > 0 ) { sclock = '<span class="days">' + days + 'd</span> '; }
-				if( hours > 0 && t.total > 3600 ) { sclock = sclock + '<span class="hours">' + hours + 'h</span> '; }
-				if( minutes > 0 && t.total > 60 ) { sclock = sclock + '<span class="minutes">' + ('0' + minutes).slice(-2) + 'm</span> '; }
-				if( seconds > 0 )  { sclock = sclock + '<span class="seconds">' + ('0' + seconds).slice(-2) + 's</span> '; }
+				var t = getRemainingTime( jscob_data.start_time );
 				
-				if( difference > 0 ){
-					if( difference > delay * 60000 ) {
+				// hide the bar if the event is too far out
+				if( jscob_data.delay > 0 ){
+					if( t.time_remaining > jscob_data.delay * 60000 ){
 						if( ! jscob_data.bar.hasClass( 'jscob-hiddenbar' ) ) 
 							jscob_data.bar.addClass( 'jscob-hiddenbar' );
 					} else {
@@ -99,27 +149,37 @@ query CurrentService {
 					}
 				}
 				
-				// Display the results 
-				jscob_clock.html( sclock );
-
-				// If we are past the end time, clear the countdown
-				if( difference < 0 ) {
-					clearInterval( intervalId );
-					jscob_clock.html = "";
-					//document.getElementById("countdown").innerHTML = "";
-					return;
+				// output the clock
+				jscob_clock.html( t.clock );
+				
+				// update the clock depending on how much time is left
+				if( t.time_remaining > 1000 * 60 * 60 * 24 ) {
+					clearInterval( intervalId )
+					intervalId = setInterval( updateClock, 60000 );
 				}
-			}, 1000);
+				if( t.time_remaining < 1000 ){
+					clearInterval( intervalId )
+					//(function(){
+					jscob_bar.html( jscob_data.live_text );
+					jscob_bar.removeClass( 'jscob-hiddenbar upcoming' ).addClass( 'live' );
+					//})();
+				}
+				
+			}
+			
+			updateClock();
+			var intervalId = setInterval( updateClock, 1000 );
+			
 		}
-		
-		startCountdown();
 	
-	} );
+		fetchData();
 		
+	} );
+	
 	function debug( msg ){
 		if( jscob_data.debug && console.log ){
 			console.log( msg );
 		}
 	}
 	
-})( jQuery );
+} )( jQuery );

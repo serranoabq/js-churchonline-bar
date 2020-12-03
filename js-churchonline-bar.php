@@ -2,7 +2,7 @@
 /*
 	Plugin Name: ChurchOnline Notification Bar
 	Description: Plugin to create a notification bar at the top of your site to notify when your ChurchOnline event is live
-	Version: 1.0
+	Version: 1.2
 	Author: Justin R. Serrano
 */
 
@@ -102,7 +102,7 @@ class JS_ChurchOnlineBar {
 			'id' => 'churchonline_css',
 			'label' => _x( 'Custom CSS', 'Customizer setting label', 'js_churchonline' ),
 			'type' => 'textarea',
-			'description' => _x( 'Enter any custom CSS to apply to the notification bar. The following ids and classes are used: <code>#jscob_bar</code>, <code>#jscob_link</code>, <code>#jscob_clock</code>, <code>#jscob_clock.live</code>, <code>#jscob_clock.upcoming</code>. Depending on your theme, you might have to override some styles with <code>!important</code>.', 'Customizer setting description', 'js_churchonline' ),
+			'description' => _x( 'Enter any custom CSS to apply to the notification bar. The following ids and classes are used: <code>#jscob_bar</code>, <code>#jscob_link</code>, <code>#jscob_clock</code>, <code>#jscob_clock .digits</code>, <code>#jscob_clock .days/.hours/.minutes/.seconds</code>,  <code>#jscob_clock.live</code>, <code>#jscob_clock.upcoming</code>. Depending on your theme, you might have to override some styles with <code>!important</code>.', 'Customizer setting description', 'js_churchonline' ),
 			'default' => '',
 			'section' => 'churchonline',
 		) );
@@ -139,6 +139,15 @@ class JS_ChurchOnlineBar {
 			'default' => true,
 			'section' => 'churchonline',
 		) );
+		
+		$this->customize_createSetting( $wp_customize, array(
+			'id' => 'churchonline_showunits',
+			'label' => _x( 'Show clock units', 'Customizer setting label', 'js_churchonline' ),
+			'type' => 'checkbox',
+			'description' => _x( 'Check to display units in the clock (can also be accomplished via css)', 'Customizer setting description', 'js_churchonline' ),
+			'default' => true,
+			'section' => 'churchonline',
+		) );
 
 	}
 	
@@ -154,12 +163,13 @@ class JS_ChurchOnlineBar {
 		// Add scripts
 		$jscob_data = array(
 			'account'   => get_theme_mod( 'churchonline_account' ),
-			'live_text' => sprintf( '<a href="http://%s.churchonline.org" id="jscob_link" target="_blank">' . get_theme_mod( 'churchonline_livelink' ) . '</a>', get_theme_mod( 'churchonline_account' ) ),
+			'live_text' => sprintf( '<a href="https://%s.online.church/" id="jscob_link" target="_blank">' . get_theme_mod( 'churchonline_livelink' ) . '</a>', get_theme_mod( 'churchonline_account' ) ),
 			'upcoming_text' => str_replace( '{{CLOCK}}', '<span id="jscob_clock"></span>', get_theme_mod( 'churchonline_upcomingtext' ) ),
-			'parent'    => get_theme_mod( 'churchonline_inject' ),
-			'show_upc'  => get_theme_mod( 'churchonline_showupcoming' ),
-			'delay'     => get_theme_mod( 'churchonline_delay' ),
-			'debug'     => $this->debug_enabled,
+			'parent'     => get_theme_mod( 'churchonline_inject' ),
+			'show_upc'   => get_theme_mod( 'churchonline_showupcoming' ),
+			'show_units' => get_theme_mod( 'churchonline_showunits' ),
+			'delay'      => get_theme_mod( 'churchonline_delay' ),
+			'debug'      => $this->debug_enabled,
 		);
 		
 		wp_localize_script( 'jscob-script', 'jscob_data', $jscob_data );
