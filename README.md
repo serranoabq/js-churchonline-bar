@@ -25,14 +25,14 @@ Configuration is done through the WordPress Customizer.
 
 The following styles are available:
 ```css
-#jscob_bar{ _/* Notification bar */_ }
-#jscob_link { _/* Link when live */_ }
-#jscob_clock { _/* Clock */_ }
-#jscob_clock .digits { _/* Clock digits */_ }
-#jscob_clock .days/.hours/.minutes/.seconds { _/* Clock days, hours, minutes, seconds */_ }
-#jscob_clock .jscob_units { _/* Clock units */_ }
-#jscob_bar.live { _/* Bar style when live */_ }
-#jscob_bar.upcoming { _/* Bar style when upcoming */_ }
+#jscob_bar{ /* Notification bar */ }
+#jscob_link { /* Link when live */ }
+#jscob_clock { /* Clock */ }
+#jscob_clock .digits { /* Clock digits */_ }
+#jscob_clock .days/.hours/.minutes/.seconds { /* Clock days, hours, minutes, seconds */ }
+#jscob_clock .jscob_units { /* Clock units */ }
+#jscob_bar.live { /* Bar style when live */ }
+#jscob_bar.upcoming { /* Bar style when upcoming */ }
 ```
 
 Depending on your theme you might have to override some styles with `!important`. 
