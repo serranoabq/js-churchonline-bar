@@ -2,7 +2,7 @@
 /*
 	Plugin Name: ChurchOnline Notification Bar
 	Description: Plugin to create a notification bar at the top of your site to notify when your ChurchOnline event is live
-	Version: 1.2
+	Version: 1.2.1
 	Author: Justin R. Serrano
 */
 
@@ -46,9 +46,9 @@ class JS_ChurchOnlineBar {
 		// Username
 		$this->customize_createSetting( $wp_customize, array(
 			'id' => 'churchonline_account',
-			'label' => _x( 'ChurchOnline username', 'Customizer setting label', 'js_churchonline' ),
+			'label' => _x( 'ChurchOnline account name', 'Customizer setting label', 'js_churchonline' ),
 			'type' => 'text',
-			'description' => _x( 'Enter the account username.', 'Customizer setting description', 'js_churchonline' ),
+			'description' => _x( '<em>account</em>.online.church', 'Customizer setting description', 'js_churchonline' ),
 			'default' => '',
 			'section' => 'churchonline',
 		) );
@@ -70,7 +70,7 @@ class JS_ChurchOnlineBar {
 		// Injection point
 		$this->customize_createSetting( $wp_customize, array(
 			'id' => 'churchonline_inject',
-			'label' => _x( 'DOM Element to inject into', 'Customizer setting label', 'js_churchonline' ),
+			'label' => _x( 'DOM element to inject into', 'Customizer setting label', 'js_churchonline' ),
 			'type' => 'text',
 			'description' => _x( 'Enter the CSS selector of the parent element the notification bar will be injected into (e.g. <code>body</code>, <code>#header</code>, <code>.top</code>).', 'Customizer setting description', 'js_churchonline' ),
 			'default' => 'body',
@@ -97,17 +97,7 @@ class JS_ChurchOnlineBar {
 			'section' => 'churchonline',
 		) );
 		
-		// Custom CSS
-		$this->customize_createSetting( $wp_customize, array(
-			'id' => 'churchonline_css',
-			'label' => _x( 'Custom CSS', 'Customizer setting label', 'js_churchonline' ),
-			'type' => 'textarea',
-			'description' => _x( 'Enter any custom CSS to apply to the notification bar. The following ids and classes are used: <code>#jscob_bar</code>, <code>#jscob_link</code>, <code>#jscob_clock</code>, <code>#jscob_clock .digits</code>, <code>#jscob_clock .days/.hours/.minutes/.seconds</code>,  <code>#jscob_clock.live</code>, <code>#jscob_clock.upcoming</code>. Depending on your theme, you might have to override some styles with <code>!important</code>.', 'Customizer setting description', 'js_churchonline' ),
-			'default' => '',
-			'section' => 'churchonline',
-		) );
-		
-		// Cache time
+		// Notification delay
 		$this->customize_createSetting( $wp_customize, array(
 			'id' => 'churchonline_delay',
 			'label' => _x( 'Notification delay', 'Customizer setting label', 'js_churchonline' ),
@@ -131,6 +121,7 @@ class JS_ChurchOnlineBar {
 			'section' => 'churchonline',
 		) );
 		
+		// Show upcoming
 		$this->customize_createSetting( $wp_customize, array(
 			'id' => 'churchonline_showupcoming',
 			'label' => _x( 'Show bar when upcoming', 'Customizer setting label', 'js_churchonline' ),
@@ -140,15 +131,26 @@ class JS_ChurchOnlineBar {
 			'section' => 'churchonline',
 		) );
 		
+		// Show units
 		$this->customize_createSetting( $wp_customize, array(
 			'id' => 'churchonline_showunits',
 			'label' => _x( 'Show clock units', 'Customizer setting label', 'js_churchonline' ),
 			'type' => 'checkbox',
-			'description' => _x( 'Check to display units in the clock (can also be accomplished via css)', 'Customizer setting description', 'js_churchonline' ),
+			'description' => _x( 'Check to display units in the countdown clock', 'Customizer setting description', 'js_churchonline' ),
 			'default' => true,
 			'section' => 'churchonline',
 		) );
 
+		// Custom CSS
+		$this->customize_createSetting( $wp_customize, array(
+			'id' => 'churchonline_css',
+			'label' => _x( 'Custom CSS', 'Customizer setting label', 'js_churchonline' ),
+			'type' => 'textarea',
+			'description' => _x( 'Enter any custom CSS to apply to the notification bar. The following ids and classes are used: <code>#jscob_bar</code>, <code>#jscob_link</code>, <code>#jscob_clock</code>, <code>#jscob_clock .digits</code>, <code>#jscob_clock .days/.hours/.minutes/.seconds</code>,  <code>#jscob_bar.live</code>, <code>#jscob_bar.upcoming</code>. Depending on your theme, you might have to override some styles with <code>!important</code>.', 'Customizer setting description', 'js_churchonline' ),
+			'default' => '',
+			'section' => 'churchonline',
+		) );
+		
 	}
 	
 	function add_scripts(){
